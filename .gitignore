@@ -14,7 +14,7 @@
 .*.swp
 .DS_Store
 .cache
-.cache
+.cache*
 .classpath
 .codefellow
 .ensime*
