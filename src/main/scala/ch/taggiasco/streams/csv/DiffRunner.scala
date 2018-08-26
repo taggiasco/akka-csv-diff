@@ -35,10 +35,11 @@ object DiffRunner {
       implicit val materializer = ActorMaterializer()
       implicit val executionContext = materializer.executionContext
       implicit val configuration = ConfigFactory.load()
+      val columnPrefix = "column_"
       
-      val config = CsvDiffConfig(args.head)
+      val config = CsvDiffConfig(args.head, columnPrefix)
       
-      val columns = (1 to config.columns map { n => "column_"+n }).toSeq
+      val columns = (1 to config.columns map { n => columnPrefix+n }).toSeq
       
       val originGraph = CsvDiffParser.parse(CsvDiffFile.load(config.originFilename), columns)
       val targetGraph = CsvDiffParser.parse(CsvDiffFile.load(config.targetFilename), columns)
@@ -48,6 +49,7 @@ object DiffRunner {
         case Success(results) =>
           val originResults = results(0)
           val targetResults = results(1)
+          val result = DiffExecute.compare(config, originResults, targetResults)
           println("Origin results: ")
           println(originResults)
           println("Target results: ")
