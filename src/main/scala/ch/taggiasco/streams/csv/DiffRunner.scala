@@ -50,10 +50,14 @@ object DiffRunner {
           val originResults = results(0)
           val targetResults = results(1)
           val result = DiffExecute.compare(config, originResults, targetResults)
-          println("Origin results: ")
-          println(originResults)
-          println("Target results: ")
-          println(targetResults)
+//          println("Origin results: ")
+//          println(originResults)
+//          println("Target results: ")
+//          println(targetResults)
+//          println("----")
+          println("Results:")
+          println("--------")
+          println(result)
           system.terminate()
         case Failure(e) =>
           println(s"Failure: ${e.getMessage}")
@@ -61,7 +65,7 @@ object DiffRunner {
       }
     } catch {
       case EndException(msg) =>
-        
+        println(s"Failure: $msg")
     }
   }
 }
