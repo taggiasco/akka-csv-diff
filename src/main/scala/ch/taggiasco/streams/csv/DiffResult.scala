@@ -7,7 +7,7 @@ case class DiffResult(
   koLinesCount:       Int,
   missingLinesCount:  Int,
   lineWithNoKeyCount: Int,
-  diffByCols:         Map[String, Int],
+  keysDiffByCols:     Map[String, Set[String]],
   koLines:            Set[String],
   missingLines:       Set[String]
 ) {
@@ -18,7 +18,9 @@ Number of lines OK : $okLinesCount
 Number of lines KO : $koLinesCount
 Number of missing lines : $missingLinesCount
 Differences by columns :
-${diffByCols.map(s => " - " + s._1 + " : " + s._2).toList.sorted.mkString("\n")}
+${keysDiffByCols.map(s => " - " + s._1 + " : " + s._2.size).toList.sorted.mkString("\n")}
+IDs with differences by columns :
+${keysDiffByCols.map(s => " - " + s._1 + " : " + s._2.mkString(", ")).toList.sorted.mkString("\n")}
 IDs of lines that are KO:
   ${koLines.toList.sorted.mkString(", ")}${if(koLines.isEmpty){"** none **"}else{""}}
 IDs of lines that are missing:
@@ -42,10 +44,10 @@ IDs of lines that are missing:
   def addMissingLine(id: String): DiffResult = this.copy(missingLines = missingLines + id)
   
   
-  def addDiffByCol(name: String): DiffResult = {
-    val n = diffByCols.get(name).getOrElse(0) + 1
-    val diffs = diffByCols + (name -> n)
-    this.copy(diffByCols = diffs)
+  def addDiffByColForKey(columnName: String, key: String): DiffResult = {
+    val keys = keysDiffByCols.get(columnName).getOrElse(Set.empty[String]) + key
+    val nameKeys = keysDiffByCols + (columnName -> keys)
+    this.copy(/*diffByCols = diffs, */keysDiffByCols = nameKeys)
   }
   
 }
@@ -55,7 +57,7 @@ IDs of lines that are missing:
 object DiffResult {
   
   def apply(): DiffResult = {
-    DiffResult(0, 0, 0, 0, 0, Map.empty[String, Int], Set.empty[String], Set.empty[String])
+    DiffResult(0, 0, 0, 0, 0, Map.empty[String, Set[String]], Set.empty[String], Set.empty[String])
   }
   
 }

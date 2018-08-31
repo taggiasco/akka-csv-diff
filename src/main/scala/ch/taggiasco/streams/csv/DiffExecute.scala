@@ -28,10 +28,10 @@ object DiffExecute {
           currentResult
         case Some(v) =>
           // different data
-          (currentResult._1.addDiffByCol(currentElement._1), false)
+          (currentResult._1.addDiffByColForKey(currentElement._1, key), false)
         case None =>
           // not existing data
-          (currentResult._1.addDiffByCol(currentElement._1), false)
+          (currentResult._1.addDiffByColForKey(currentElement._1, key), false)
       }
     })
     if(res._2) {
