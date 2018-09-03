@@ -42,7 +42,48 @@ object DiffExecute {
   }
   
   
-  def compare(
+  private def removeDuplicateSpaces(s: String): String = s.trim().replaceAll(" +", " ")
+  
+  
+  private def removeCarriageReturns(s: String): String = s.replaceAll("\n", " ")
+  
+  
+  private def reformat(
+    config:  CsvDiffConfig,
+    value:   String
+  ): String = {
+    val newValue = {
+      if(config.removeCarriageReturns) {
+        removeCarriageReturns(value)
+      } else {
+        value
+      }
+    }
+    if(config.removeDuplicateSpaces) {
+      removeDuplicateSpaces(newValue)
+    } else {
+      newValue
+    }
+  }
+  
+  
+  private def reformat(
+    config:  CsvDiffConfig,
+    elements: Seq[Map[String, String]]
+  ): Seq[Map[String, String]] = {
+    if(config.removeCarriageReturns || config.removeDuplicateSpaces) {
+      elements.map(elem => {
+        elem.map(nv => {
+          nv._1 -> reformat(config, nv._2)
+        })
+      })
+    } else {
+      elements
+    }
+  }
+  
+  
+  private def compare0(
     config:  CsvDiffConfig,
     sources: Seq[Map[String, String]],
     targets: Seq[Map[String, String]]
@@ -64,6 +105,19 @@ object DiffExecute {
           result.newLineWithNoKey
       }
     })
+  }
+  
+  
+  def compare(
+    config:  CsvDiffConfig,
+    sources: Seq[Map[String, String]],
+    targets: Seq[Map[String, String]]
+  ): DiffResult = {
+    compare0(
+      config,
+      reformat(config, sources),
+      reformat(config, targets)
+    )
   }
   
 }

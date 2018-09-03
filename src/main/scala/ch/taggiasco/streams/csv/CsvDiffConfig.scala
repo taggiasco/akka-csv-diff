@@ -4,12 +4,14 @@ import com.typesafe.config.Config
 
 
 case class CsvDiffConfig(
-  name:           String,
-  originFilename: String,
-  targetFilename: String,
-  columns:        Int,
-  keyColumn:      Int,
-  keyColumnName:  String
+  name:                  String,
+  originFilename:        String,
+  targetFilename:        String,
+  columns:               Int,
+  keyColumn:             Int,
+  keyColumnName:         String,
+  removeDuplicateSpaces: Boolean,
+  removeCarriageReturns: Boolean
 ) {
   require(keyColumn <= columns)
 }
@@ -24,7 +26,9 @@ object CsvDiffConfig {
       conf.getString("targetFilename"),
       conf.getInt("columns"),
       conf.getInt("keyColumn"),
-      columnPrefix + conf.getInt("keyColumn")
+      columnPrefix + conf.getInt("keyColumn"),
+      conf.getBoolean("removeDuplicateSpaces"),
+      conf.getBoolean("removeCarriageReturns")
     )
   }
 }
