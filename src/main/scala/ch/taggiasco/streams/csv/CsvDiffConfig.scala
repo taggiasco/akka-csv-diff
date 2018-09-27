@@ -1,6 +1,7 @@
 package ch.taggiasco.streams.csv
 
 import com.typesafe.config.Config
+import scala.collection.JavaConverters._
 
 
 case class CsvDiffConfig(
@@ -8,27 +9,33 @@ case class CsvDiffConfig(
   originFilename:        String,
   targetFilename:        String,
   columns:               Int,
-  keyColumn:             Int,
-  keyColumnName:         String,
+  keyColumns:            List[Int],
+  keyColumnNames:        List[String],
   removeDuplicateSpaces: Boolean,
-  removeCarriageReturns: Boolean
+  removeCarriageReturns: Boolean,
+  ignoreHeaderLine:      Boolean
 ) {
-  require(keyColumn <= columns)
+  require(keyColumns.size > 0)
+  keyColumns.foreach(key => require(key <= columns))
 }
 
 
 object CsvDiffConfig {
   def apply(name: String, columnPrefix: String)(implicit config: Config): CsvDiffConfig = {
     val conf = config.getConfig("csv-diff").getConfig(name)
+    val keys = conf.getIntList("keyColumn").asScala.toList.map(_.toInt)
+    val names = keys.map(v => columnPrefix + v)
+    
     CsvDiffConfig(
       name,
       conf.getString("originFilename"),
       conf.getString("targetFilename"),
       conf.getInt("columns"),
-      conf.getInt("keyColumn"),
-      columnPrefix + conf.getInt("keyColumn"),
+      keys,
+      names,
       conf.getBoolean("removeDuplicateSpaces"),
-      conf.getBoolean("removeCarriageReturns")
+      conf.getBoolean("removeCarriageReturns"),
+      conf.getBoolean("ignoreHeaderLine")
     )
   }
 }

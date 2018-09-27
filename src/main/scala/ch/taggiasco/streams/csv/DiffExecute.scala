@@ -2,17 +2,84 @@ package ch.taggiasco.streams.csv
 
 object DiffExecute {
   
-  private def findData(
-    elements: Seq[Map[String, String]],
-    column:   String,
-    value:    String
-  ): Option[Map[String, String]] = {
-    elements.find(element => {
-      element.exists(kv => {
-        kv._1 == column && kv._2 == value
-      })
+  
+  private def getKeyValues(
+    element: Map[String, String],
+    keys:    List[String]
+  ): Map[String, String] = {
+    val result = keys.foldLeft((Map.empty[String, String], true))((acc, keyName) => {
+      if(acc._2) {
+        // for instance, it's valid
+        element.get(keyName) match {
+          case Some(value) if value.nonEmpty =>
+            // still valid
+            (acc._1 + (keyName -> value), true)
+          case _ =>
+            // becomes invalid
+            (acc._1, false)
+        }
+      } else {
+        acc
+      }
+    })
+    if(result._2) {
+      // if the result is valid
+      result._1
+    } else {
+      // if it's not, returns empty map
+      Map.empty[String, String]
+    }
+  }
+  
+  
+  private def buildStringValue(
+    values:   Map[String, String]
+  ): String = {
+    if(values.size == 1) {
+      values.head._2
+    } else {
+      "(" + values.toSeq.sortBy(_._1).map(_._2).mkString(", ") + ")"
+    }
+  }
+  
+  
+  private def matchData(
+    element: Map[String, String],
+    values:  Map[String, String]
+  ): Boolean = {
+    values.foldLeft(true)((acc, value) => {
+      if(acc) {
+        element.get(value._1) match {
+          case Some(v) if v == value._2 => true
+          case _ => false
+        }
+      } else {
+        // if already failed
+        acc
+      }
     })
   }
+  
+  
+  private def findData(
+    elements: Seq[Map[String, String]],
+    values:   Map[String, String]
+  ): Option[Map[String, String]] = {
+    elements.find(element => matchData(element, values))
+  }
+  
+  
+//  private def findData(
+//    elements: Seq[Map[String, String]],
+//    column:   String,
+//    value:    String
+//  ): Option[Map[String, String]] = {
+//    elements.find(element => {
+//      element.exists(kv => {
+//        kv._1 == column && kv._2 == value
+//      })
+//    })
+//  }
   
   
   private def verify(
@@ -88,22 +155,46 @@ object DiffExecute {
     sources: Seq[Map[String, String]],
     targets: Seq[Map[String, String]]
   ): DiffResult = {
-    sources.foldLeft(DiffResult())((currentResult, source) => {
-      val result = currentResult.addLine
-      source.get(config.keyColumnName) match {
-        case Some(value) if value.nonEmpty =>
-          findData(targets, config.keyColumnName, value) match {
-            case Some(target) =>
-              // check the two lines
-              verify(result, value, source, target)
-            case None =>
-              // the line is missing
-              result.newMissingLine.addMissingLine(value)
-          }
-        case _ =>
-          // if empty or not defined
-          result.newLineWithNoKey
+    val actives = {
+      if(config.ignoreHeaderLine) {
+        sources.tail
+      } else {
+        sources
       }
+    }
+    actives.foldLeft(DiffResult())((currentResult, source) => {
+      val result = currentResult.addLine
+      val values = getKeyValues(source, config.keyColumnNames)
+      if(values.nonEmpty) {
+        // entry is valid
+        val value = buildStringValue(values)
+        findData(targets, values) match {
+          case Some(target) =>
+            // check the two lines
+            verify(result, value, source, target)
+          case None =>
+            // the line is missing
+            result.newMissingLine.addMissingLine(value)
+        }
+      } else {
+        // entry is not valid
+        result.newLineWithNoKey
+      }
+      
+//      source.get(config.keyColumnNames.head) match {
+//        case Some(value) if value.nonEmpty =>
+//          findData(targets, config.keyColumnNames.head, value) match {
+//            case Some(target) =>
+//              // check the two lines
+//              verify(result, value, source, target)
+//            case None =>
+//              // the line is missing
+//              result.newMissingLine.addMissingLine(value)
+//          }
+//        case _ =>
+//          // if empty or not defined
+//          result.newLineWithNoKey
+//      }
     })
   }
   
