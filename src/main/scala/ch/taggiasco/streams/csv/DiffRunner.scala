@@ -15,6 +15,7 @@ import scala.util.{Try, Failure, Success}
 import scala.concurrent.Future
 
 import com.typesafe.config.ConfigFactory
+import akka.event.Logging
 
 
 object DiffRunner {
@@ -37,7 +38,9 @@ object DiffRunner {
       implicit val configuration = ConfigFactory.load()
       val columnPrefix = "column_"
       
-      val config = CsvDiffConfig(args.head, columnPrefix)
+      val name      = args.head
+      val config    = CsvDiffConfig(name, columnPrefix)
+      val resWriter = DiffResultWriter(name)
       
       val columns = (1 to config.columns map { n => columnPrefix+n }).toSeq
       
@@ -50,12 +53,15 @@ object DiffRunner {
           val originResults = results(0)
           val targetResults = results(1)
           val result = DiffExecute.compare(config, originResults, targetResults)
-          println("Results:")
-          println("--------")
-          println(result)
+          resWriter.write("Results:")
+          resWriter.write("--------")
+          resWriter.write(result.toString)
+          resWriter.writeCurrentTimestamp(s"Ending at ")
           system.terminate()
         case Failure(e) =>
           println(s"Failure: ${e.getMessage}")
+          resWriter.write(s"Failure: ${e.getMessage}")
+          resWriter.writeCurrentTimestamp(s"Ending at ")
           system.terminate()
       }
     } catch {
