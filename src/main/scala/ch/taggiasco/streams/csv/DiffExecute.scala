@@ -95,6 +95,9 @@ object DiffExecute {
       if(config.columnsToIgnore.contains(index)) {
         // data to ignore, so we don't count it
         currentResult
+      } else if(config.columnsToIgnoreNull.contains(index) && target.get(currentElement._1).getOrElse("") == "") {
+        // data to ignore if null, and it seems to be the case
+        currentResult
       } else {
         target.get(currentElement._1) match {
           case Some(v) if v == currentElement._2 =>
