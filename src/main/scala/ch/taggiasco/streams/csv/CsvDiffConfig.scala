@@ -25,7 +25,12 @@ object CsvDiffConfig {
   def apply(name: String, columnPrefix: String)(implicit config: Config): CsvDiffConfig = {
     val conf         = config.getConfig("csv-diff").getConfig(name)
     val keys         = conf.getIntList("keyColumn").asScala.toList.map(_.toInt)
-    val colsToIgnore = conf.getIntList("columnToIgnore").asScala.toList.map(_.toInt)
+    val colsToIgnore = 
+      try {
+        conf.getIntList("columnToIgnore").asScala.toList.map(_.toInt)
+      } catch {
+        case e: Exception => List.empty[Int]
+      }
     val names        = keys.map(v => columnPrefix + v)
     
     CsvDiffConfig(
