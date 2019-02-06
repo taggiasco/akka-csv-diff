@@ -83,22 +83,30 @@ object DiffExecute {
   
   
   private def verify(
-    result: DiffResult,
-    key:    String,
-    source: Map[String, String],
-    target: Map[String, String]
+    config:  CsvDiffConfig,
+    result:  DiffResult,
+    key:     String,
+    source:  Map[String, String],
+    target:  Map[String, String]
   ): DiffResult = {
-    val res = source.foldLeft((result, true))((currentResult, currentElement) => {
-      target.get(currentElement._1) match {
-        case Some(v) if v == currentElement._2 =>
-          // same data
-          currentResult
-        case Some(v) =>
-          // different data
-          (currentResult._1.addDiffByColForKey(currentElement._1, key), false)
-        case None =>
-          // not existing data
-          (currentResult._1.addDiffByColForKey(currentElement._1, key), false)
+    val indexedSource = source.zipWithIndex.map(t => (t._1, t._2+1))
+    val res = indexedSource.foldLeft((result, true))((currentResult, current) => {
+      val (currentElement, index) = current
+      if(config.columnsToIgnore.contains(index)) {
+        // data to ignore, so we don't count it
+        currentResult
+      } else {
+        target.get(currentElement._1) match {
+          case Some(v) if v == currentElement._2 =>
+            // same data
+            currentResult
+          case Some(v) =>
+            // different data
+            (currentResult._1.addDiffByColForKey(currentElement._1, key), false)
+          case None =>
+            // not existing data
+            (currentResult._1.addDiffByColForKey(currentElement._1, key), false)
+        }
       }
     })
     if(res._2) {
@@ -171,7 +179,7 @@ object DiffExecute {
         findData(targets, values) match {
           case Some(target) =>
             // check the two lines
-            verify(result, value, source, target)
+            verify(config, result, value, source, target)
           case None =>
             // the line is missing
             result.newMissingLine.addMissingLine(value)
