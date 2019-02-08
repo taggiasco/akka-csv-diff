@@ -82,6 +82,20 @@ object DiffExecute {
 //  }
   
   
+  private def removeSpaces(
+    config: CsvDiffConfig,
+    index:  Int
+  )(
+    value:  String
+  ): String = {
+    if(config.columnsToRemoveSpace.contains(index)) {
+      value.replaceAll(" ", "")
+    } else {
+      value
+    }
+  }
+  
+  
   private def verify(
     config:  CsvDiffConfig,
     result:  DiffResult,
@@ -92,6 +106,7 @@ object DiffExecute {
     val indexedSource = source.zipWithIndex.map(t => (t._1, t._2+1))
     val res = indexedSource.foldLeft((result, true))((currentResult, current) => {
       val (currentElement, index) = current
+      val adapter = removeSpaces(config, index) _
       if(config.columnsToIgnore.contains(index)) {
         // data to ignore, so we don't count it
         currentResult
@@ -99,8 +114,9 @@ object DiffExecute {
         // data to ignore if null, and it seems to be the case
         currentResult
       } else {
-        target.get(currentElement._1) match {
-          case Some(v) if v == currentElement._2 =>
+        val value = target.get(currentElement._1).map(adapter)
+        value match {
+          case Some(v) if v == adapter(currentElement._2) =>
             // same data
             currentResult
           case Some(v) =>
