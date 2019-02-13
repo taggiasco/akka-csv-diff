@@ -14,9 +14,9 @@ case class CsvDiffConfig(
   removeDuplicateSpaces: Boolean,
   removeCarriageReturns: Boolean,
   ignoreHeaderLine:      Boolean,
-  columnsToIgnore:       List[Int],
-  columnsToIgnoreNull:   List[Int],
-  columnsToRemoveSpace:  List[Int]
+  columnsToIgnore:       List[String],
+  columnsToIgnoreNull:   List[String],
+  columnsToRemoveSpace:  List[String]
 ) {
   require(keyColumns.size > 0)
   keyColumns.foreach(key => require(key <= columns))
@@ -25,11 +25,13 @@ case class CsvDiffConfig(
 
 object CsvDiffConfig {
   
-  private def getListOfInt(config: Config, name: String): List[Int] = {
+  private def getListOfColumns(config: Config, name: String, columnPrefix: String): List[String] = {
     try {
-      config.getIntList("columnsToIgnore").asScala.toList.map(_.toInt)
+      val cols = config.getIntList(name).asScala.toList.map(_.toInt)
+      cols.map(n => columnPrefix + n)
     } catch {
-      case e: Exception => List.empty[Int]
+      case e: Exception =>
+        List.empty[String]
     }
   }
   
@@ -49,9 +51,9 @@ object CsvDiffConfig {
       conf.getBoolean("removeDuplicateSpaces"),
       conf.getBoolean("removeCarriageReturns"),
       conf.getBoolean("ignoreHeaderLine"),
-      getListOfInt(conf, "columnsToIgnore"),
-      getListOfInt(conf, "columnsToIgnoreNull"),
-      getListOfInt(conf, "columnsToRemoveSpace")
+      getListOfColumns(conf, "columnsToIgnore", columnPrefix),
+      getListOfColumns(conf, "columnsToIgnoreNull", columnPrefix),
+      getListOfColumns(conf, "columnsToRemoveSpace", columnPrefix)
     )
   }
 }
